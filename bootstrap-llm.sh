@@ -3,39 +3,31 @@ set -euo pipefail
 
 echo "=== IS-LLM bootstrap starting ==="
 
-# Disable Vast auto-tmux
-touch /root/.no_auto_tmux
+EXPECTED_VLLM_VERSION="0.28.0"
 
-# Persistent directories
-mkdir -p /workspace/llm/logs
-mkdir -p /workspace/llm/hf_home/hub
+ACTUAL_VLLM_VERSION="$(vllm --version | awk '{print $NF}')"
 
-# Copy known-good launcher into place
-cp /workspace/is-server/llm/start-pernicious.sh /workspace/llm/start-pernicious.sh
-chmod +x /workspace/llm/start-pernicious.sh
-
-# Build disposable vLLM environment
-if [ ! -x /opt/vllm-venv/bin/vllm ]; then
-  echo "Installing vLLM environment..."
-  rm -rf /opt/vllm-venv
-  python3 -m venv /opt/vllm-venv
-  /opt/vllm-venv/bin/python -m pip install -U pip
-  /opt/vllm-venv/bin/pip install vllm==0.28.0
+if [ "$ACTUAL_VLLM_VERSION" != "$EXPECTED_VLLM_VERSION" ]; then
+  echo "ERROR: Expected vLLM $EXPECTED_VLLM_VERSION, found $ACTUAL_VLLM_VERSION"
+  exit 1
 fi
 
-# Install Supervisor service
-cp /workspace/is-server/llm/is-llm.conf /etc/supervisor/conf.d/is-llm.conf
+if [ ! -f /etc/supervisor/conf.d/vllm.conf ]; then
+  echo "ERROR: Vast vLLM Supervisor configuration not found."
+  exit 1
+fi
 
-supervisorctl reread
-supervisorctl update
+echo "vLLM version: $ACTUAL_VLLM_VERSION"
+echo "Using Vast-managed vLLM service."
 
-echo "Starting IS-LLM..."
-supervisorctl restart is-llm || supervisorctl start is-llm
+if supervisorctl status vllm | grep -q RUNNING; then
+  echo "vLLM is already running; leaving it alone."
+else
+  echo "Starting vLLM..."
+  supervisorctl start vllm
+fi
 
 echo
 echo "=== IS-LLM bootstrap complete ==="
-echo "Check status with:"
-echo "  supervisorctl status is-llm"
-echo
-echo "Watch startup with:"
-echo "  tail -f /workspace/llm/logs/pernicious-startup.log"
+echo "Status:"
+supervisorctl status vllm
