@@ -1,3 +1,5 @@
+base_image=vastai/vllm:v0.28.0-cuda-13.0
 vllm=0.28.0
 torch=2.13.0+cu130
 cuda=13.0
+model=Black-Ink-Guild/Pernicious_Prophecy_70B_FP8
