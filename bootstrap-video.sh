@@ -57,7 +57,12 @@ cp "$VIDEO_DIR/comfyui.conf" /etc/supervisor/conf.d/comfyui.conf
 
 supervisorctl reread
 supervisorctl update
-supervisorctl restart comfyui
+if supervisorctl status comfyui | grep -q RUNNING; then
+  echo "ComfyUI is already running; leaving it alone."
+else
+  echo "Starting ComfyUI..."
+  supervisorctl start comfyui
+fi
 
 echo
 echo "=== IS-VIDEO bootstrap complete ==="
