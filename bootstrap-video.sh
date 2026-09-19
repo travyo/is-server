@@ -117,26 +117,32 @@ install_git_node \
 
 
 # ---------------------------------------------------------------------------
-# Install IS continuation custom node
+# Install IS custom nodes
 # ---------------------------------------------------------------------------
 
+install_is_node() {
+    local name="$1"
+    local src="$VIDEO_DIR/custom_nodes/$name/__init__.py"
+    local dst="$COMFY_DIR/custom_nodes/$name"
+
+    echo "Installing IS custom node: $name"
+
+    if [ ! -f "$src" ]; then
+        echo "ERROR: IS custom node source not found:"
+        echo "  $src"
+        exit 1
+    fi
+
+    mkdir -p "$dst"
+    cp "$src" "$dst/__init__.py"
+}
+
 echo
-echo "Installing IS continuation custom node..."
+echo "Installing IS custom nodes..."
 
-IS_CONTINUATION_SRC="$VIDEO_DIR/custom_nodes/IS_Continuation/__init__.py"
-IS_CONTINUATION_DST="$COMFY_DIR/custom_nodes/IS_Continuation"
-
-if [ ! -f "$IS_CONTINUATION_SRC" ]; then
-    echo "ERROR: IS continuation node source not found:"
-    echo "  $IS_CONTINUATION_SRC"
-    exit 1
-fi
-
-mkdir -p "$IS_CONTINUATION_DST"
-
-cp \
-    "$IS_CONTINUATION_SRC" \
-    "$IS_CONTINUATION_DST/__init__.py"
+install_is_node "IS_Continuation"
+install_is_node "IS_ClipLength"
+install_is_node "IS_Resolution16x9"
 
 
 # ---------------------------------------------------------------------------
@@ -210,6 +216,17 @@ download_if_missing \
 download_if_missing \
     "$COMFY_DIR/models/loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors" \
     "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors?download=true"
+
+
+# Optional Blackwell-optimized NVFP4 Ref2VA base.
+download_if_missing \
+    "$COMFY_DIR/models/diffusion_models/minimax_h3_ref2va_pruned_nvfp4.safetensors" \
+    "https://huggingface.co/lilcheaty/MiniMax-H3-NVFP4/resolve/main/minimax_h3_ref2va_pruned_nvfp4.safetensors?download=true"
+
+# Higher-resolution REF2VA Turbo profile.
+download_if_missing \
+    "$COMFY_DIR/models/loras/minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors" \
+    "https://huggingface.co/lightx2v/Minimax-h3-Turbo/resolve/main/minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors?download=true"
 
 
 # ---------------------------------------------------------------------------
@@ -356,9 +373,11 @@ git -C \
     rev-parse HEAD
 
 echo
-echo "IS Continuation:"
+echo "IS custom nodes:"
 ls -l \
-    "$COMFY_DIR/custom_nodes/IS_Continuation/__init__.py"
+    "$COMFY_DIR/custom_nodes/IS_Continuation/__init__.py" \
+    "$COMFY_DIR/custom_nodes/IS_ClipLength/__init__.py" \
+    "$COMFY_DIR/custom_nodes/IS_Resolution16x9/__init__.py"
 
 echo
 echo "Service:"
